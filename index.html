@@ -23,137 +23,125 @@
     </style>
 </head>
 <body>
-    <script>
-        let video;
-        let startTime;
-        let currentNumber = 0;
-        
-        // 作品のパラメータ
-        const INCREASE_DURATION = 55; // 55秒後に数字が増加
-        const COOLDOWN_DURATION = 10; // 10秒間のクールダウン
-        const TOTAL_CYCLE = INCREASE_DURATION + COOLDOWN_DURATION; // 65秒の1サイクル
-        const INCREMENT_PER_CYCLE = 4580; // 1サイクルで増える数
-        
-        // 動画のシーン情報（秒）
-        const SCENE2_START = 5;  // 海の映像開始
-        const SCENE2_END = 50;   // 海の映像終了
-        
-        function preload() {
-            video = createVideo('AI_Art_video.mp4');
-        }
-        
-        function setup() {
-            createCanvas(windowWidth, windowHeight);
-            
-            // 動画の設定
-            video.size(windowWidth, windowHeight);
-            video.volume(0.7); // 音声を70%の音量で再生
-            video.hide();
-            
-            // ループ再生の設定
-            video.elt.loop = true;
-            video.elt.setAttribute('playsinline', '');
-            video.elt.setAttribute('webkit-playsinline', '');
-            
-            // 動画が終わったら最初から再生
-            video.elt.addEventListener('ended', function() {
-                video.elt.currentTime = 0;
-                video.play();
-            });
-            
-            // 自動再生を試みる
+<script>
+    let video;
+    let startTime;
+    let currentNumber = 0;
+    
+    // 作品のパラメータ
+    const INCREASE_DURATION = 55; // 55秒後に数字が増加
+    const COOLDOWN_DURATION = 10; // 10秒間のクールダウン
+    const TOTAL_CYCLE = INCREASE_DURATION + COOLDOWN_DURATION; // 65秒の1サイクル
+    const INCREMENT_PER_CYCLE = 4580; // 1サイクルで増える数
+    
+    // 動画のシーン情報（秒）
+    const SCENE2_START = 5;  // 海の映像開始
+    const SCENE2_END = 50;   // 海の映像終了
+    
+    function preload() {
+        video = createVideo('AI_Art_video.mp4');
+    }
+    
+    function setup() {
+        createCanvas(windowWidth, windowHeight);
+
+        // 動画設定
+        video.volume(0.7);
+        video.hide();
+
+        video.elt.loop = true;
+        video.elt.setAttribute('playsinline', '');
+        video.elt.setAttribute('webkit-playsinline', '');
+
+        video.elt.addEventListener('ended', function () {
+            video.elt.currentTime = 0;
             video.play();
-            
-            // 開始時間を記録
-            startTime = millis();
-            
-            // テキスト設定
-            textAlign(CENTER, CENTER);
-            textFont('Arial');
-            frameRate(30);
+        });
+
+        // 自動再生を試みる
+        video.play();
+
+        startTime = millis();
+
+        textAlign(CENTER, CENTER);
+        textFont('Arial');
+        frameRate(30);
+    }
+    
+    function draw() {
+        background(0);
+
+        // 動画が止まっていたら再生
+        if (video && video.elt.paused && video.elt.readyState >= 2) {
+            video.play();
         }
-        
-        function draw() {
-            background(0);
-            
-            // 動画が止まっていたら再生
-            if (video && video.elt.paused && video.elt.readyState >= 2) {
-                video.play();
-            }
-            
-            // 動画を背景として描画（アスペクト比を保持してカバー）
-            if (video && video.loadedmetadata) {
-                push();
-                let videoAspect = video.width / video.height;
-                let canvasAspect = width / height;
-                
-                if (canvasAspect > videoAspect) {
-                    let scaledHeight = width / videoAspect;
-                    image(video, 0, (height - scaledHeight) / 2, width, scaledHeight);
-                } else {
-                    let scaledWidth = height * videoAspect;
-                    image(video, (width - scaledWidth) / 2, 0, scaledWidth, height);
-                }
-                pop();
-            }
-            
-            // 経過時間を計算
-            let elapsedSeconds = (millis() - startTime) / 1000;
-            let cyclePosition = elapsedSeconds % TOTAL_CYCLE;
-            
-            // 55秒経過したサイクル数をカウント（55秒後に一発で増加）
-            let completedIncrements = floor(elapsedSeconds / TOTAL_CYCLE);
-            
-            // クールダウン中（55-65秒）も含めて、完了したサイクルのみカウント
-            if (cyclePosition >= INCREASE_DURATION) {
-                // 55秒を超えたら次のサイクルとしてカウント
-                completedIncrements += 1;
-            }
-            
-            // 数字を計算（一発で増加）
-            currentNumber = completedIncrements * INCREMENT_PER_CYCLE;
-            
-            // 動画の現在位置を取得
-            let videoTime = video.elt.currentTime;
-            
-            // シーンに応じて数字の表示スタイルを変更
-            let isScene2 = videoTime >= SCENE2_START && videoTime <= SCENE2_END;
-            
+
+        // === 動画をキャンバス中央に「全体が見えるように」フィットさせて描画 ===
+        if (video && video.elt.readyState >= 2) {
             push();
-            textAlign(CENTER, CENTER);
-            
-            if (isScene2) {
-                // シーン2（海の映像）：控えめな表示
-                textSize(100);
-                fill(255, 255, 255, 0); // 完全透明
-                stroke(255, 255, 255, 80); // 薄い白色のアウトライン
-                strokeWeight(3);
-            } else {
-                // シーン1と3（真っ黒な画面）：はっきり表示
-                textSize(120);
-                fill(255, 255, 255, 0); // 完全透明
-                stroke(255, 255, 255, 100); // 薄い白色のアウトライン
-                strokeWeight(4);
+            const vW = video.elt.videoWidth;
+            const vH = video.elt.videoHeight;
+
+            if (vW > 0 && vH > 0) {
+                // キャンバスと動画の比率からスケールを決定（contain）
+                const scale = Math.min(width / vW, height / vH);
+                const drawW = vW * scale;
+                const drawH = vH * scale;
+
+                const x = (width - drawW) / 2;
+                const y = (height - drawH) / 2;
+
+                image(video, x, y, drawW, drawH);
             }
-            
-            // 数字を描画
-            text(currentNumber.toString(), width / 2, height / 2);
             pop();
         }
-        
-        function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
-            if (video) {
-                video.size(windowWidth, windowHeight);
-            }
+
+        // 経過時間を計算
+        let elapsedSeconds = (millis() - startTime) / 1000;
+        let cyclePosition = elapsedSeconds % TOTAL_CYCLE;
+
+        // 55秒経過したサイクル数をカウント（55秒後に一発で増加）
+        let completedIncrements = floor(elapsedSeconds / TOTAL_CYCLE);
+
+        if (cyclePosition >= INCREASE_DURATION) {
+            completedIncrements += 1;
         }
-        
-        // クリックで再生（自動再生がブロックされた場合の対策）
-        function mousePressed() {
-            if (video && !video.isPlaying()) {
-                video.play();
-            }
+
+        currentNumber = completedIncrements * INCREMENT_PER_CYCLE;
+
+        // 動画の現在位置を取得
+        let videoTime = video.elt.currentTime;
+        let isScene2 = videoTime >= SCENE2_START && videoTime <= SCENE2_END;
+
+        push();
+        textAlign(CENTER, CENTER);
+
+        if (isScene2) {
+            textSize(100);
+            fill(255, 255, 255, 0);
+            stroke(255, 255, 255, 80);
+            strokeWeight(3);
+        } else {
+            textSize(120);
+            fill(255, 255, 255, 0);
+            stroke(255, 255, 255, 100);
+            strokeWeight(4);
         }
-    </script>
+
+        text(currentNumber.toString(), width / 2, height / 2);
+        pop();
+    }
+    
+    function windowResized() {
+        resizeCanvas(windowWidth, windowHeight);
+    }
+    
+    // クリックで再生（自動再生がブロックされた場合の対策）
+    function mousePressed() {
+        if (video && !video.isPlaying()) {
+            video.play();
+        }
+    }
+</script>
 </body>
 </html>
