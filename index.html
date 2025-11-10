@@ -26,9 +26,10 @@
 <script>
     let video;
     let startTime;
-    let currentNumber = 1069896762;
+    let currentNumber = 1069896762; // 初期値
     
     // 作品のパラメータ
+    const INITIAL_VALUE = 1069896762; // 初期値を定数として定義
     const INCREASE_DURATION = 55; // 55秒後に数字が増加
     const COOLDOWN_DURATION = 10; // 10秒間のクールダウン
     const TOTAL_CYCLE = INCREASE_DURATION + COOLDOWN_DURATION; // 65秒の1サイクル
@@ -107,7 +108,8 @@
             completedIncrements += 1;
         }
 
-        currentNumber = completedIncrements * INCREMENT_PER_CYCLE;
+        // 初期値から始めて、サイクルごとに増加
+        currentNumber = INITIAL_VALUE + (completedIncrements * INCREMENT_PER_CYCLE);
 
         // 動画の現在位置を取得
         let videoTime = video.elt.currentTime;
@@ -117,15 +119,15 @@
         textAlign(CENTER, CENTER);
 
         if (isScene2) {
-            textSize(100);
+            textSize(80);
             fill(255, 255, 255, 0);
             stroke(255, 255, 255, 80);
-            strokeWeight(3);
+            strokeWeight(2.5);
         } else {
-            textSize(120);
+            textSize(95);
             fill(255, 255, 255, 0);
             stroke(255, 255, 255, 100);
-            strokeWeight(4);
+            strokeWeight(3);
         }
 
         text(currentNumber.toString(), width / 2, height / 2);
