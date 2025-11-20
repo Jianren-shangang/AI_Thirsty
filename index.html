@@ -26,10 +26,38 @@
 <script>
     let video;
     let startTime;
-    let currentNumber = 1069896762; // 初期値
+    let currentNumber;
+    let prevNumber = null;
+    let glitchStartTime = 0;
+    let isGlitching = false;
+    const GLITCH_DURATION = 200; // グリッチ効果の持続時間（ミリ秒）
+    
+    // 初期値を動的に計算する関数
+    function calculateInitialValue() {
+        const now = new Date();
+        
+        // 6月2日午後0時（12:00）を基準とする
+        // 今年の6月2日午後0時を取得
+        let referenceDate = new Date(now.getFullYear(), 5, 2, 12, 0, 0, 0); // 月は0からスタート（5 = 6月）
+        
+        // もし現在が6月2日午後0時より前ならば、去年の6月2日午後0時を基準とする
+        if (now < referenceDate) {
+            referenceDate = new Date(now.getFullYear() - 1, 5, 2, 12, 0, 0, 0);
+        }
+        
+        // 経過時間をミリ秒で計算
+        const elapsedMilliseconds = now - referenceDate;
+        
+        // ミリ秒を分に変換（秒は切り捨て）
+        const elapsedMinutes = Math.floor(elapsedMilliseconds / 1000 / 60);
+        
+        // 分に4583をかけて初期値を決定
+        const initialValue = elapsedMinutes * 4583;
+        
+        return initialValue;
+    }
     
     // 作品のパラメータ
-    const INITIAL_VALUE = 1069896762; // 初期値を定数として定義
     const INCREASE_DURATION = 55; // 55秒後に数字が増加
     const COOLDOWN_DURATION = 10; // 10秒間のクールダウン
     const TOTAL_CYCLE = INCREASE_DURATION + COOLDOWN_DURATION; // 65秒の1サイクル
@@ -45,6 +73,10 @@
     
     function setup() {
         createCanvas(windowWidth, windowHeight);
+        
+        // 初期値を計算
+        const INITIAL_VALUE = calculateInitialValue();
+        currentNumber = INITIAL_VALUE;
 
         // 動画設定
         video.volume(0.7);
@@ -109,7 +141,16 @@
         }
 
         // 初期値から始めて、サイクルごとに増加
-        currentNumber = INITIAL_VALUE + (completedIncrements * INCREMENT_PER_CYCLE);
+        let newNumber = calculateInitialValue() + (completedIncrements * INCREMENT_PER_CYCLE);
+        
+        // 数字が変わった瞬間を検出してグリッチ効果を開始
+        if (prevNumber !== null && newNumber !== prevNumber) {
+            isGlitching = true;
+            glitchStartTime = millis();
+        }
+        
+        currentNumber = newNumber;
+        prevNumber = newNumber;
 
         // 動画の現在位置を取得
         let videoTime = video.elt.currentTime;
@@ -130,7 +171,34 @@
             strokeWeight(3);
         }
 
+        // グリッチ効果の実装
+        if (isGlitching && millis() - glitchStartTime < GLITCH_DURATION) {
+            let glitchProgress = (millis() - glitchStartTime) / GLITCH_DURATION;
+            let glitchIntensity = (1 - glitchProgress) * 0.8; // グリッチの強さ
+            
+            // 複数のグリッチレイヤーを描画
+            for (let i = 0; i < 5; i++) {
+                // ランダムなオフセット
+                let offsetX = random(-20, 20) * glitchIntensity;
+                let offsetY = random(-15, 15) * glitchIntensity;
+                let alpha = random(30, 150) * glitchIntensity;
+                
+                push();
+                translate(offsetX, offsetY);
+                fill(255, 255, 255, 0);
+                stroke(255, random(0, 255), random(0, 255), alpha);
+                strokeWeight(random(1.5, 3.5));
+                text(currentNumber.toString(), width / 2, height / 2);
+                pop();
+            }
+        } else {
+            // グリッチ効果が終了したら、フラグをリセット
+            isGlitching = false;
+        }
+        
+        // 通常の数字を描画
         text(currentNumber.toString(), width / 2, height / 2);
+        
         pop();
     }
     
