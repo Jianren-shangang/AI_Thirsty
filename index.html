@@ -27,11 +27,6 @@
     let video;
     let startTime;
     let currentNumber;
-    let INITIAL_VALUE; // 初期値を一度だけ計算して保持
-    let prevNumber = null;
-    let glitchStartTime = 0;
-    let isGlitching = false;
-    const GLITCH_DURATION = 200; // グリッチ効果の持続時間（ミリ秒）
     
     // 初期値を動的に計算する関数
     function calculateInitialValue() {
@@ -75,8 +70,8 @@
     function setup() {
         createCanvas(windowWidth, windowHeight);
         
-        // 初期値を一度だけ計算して固定
-        INITIAL_VALUE = calculateInitialValue();
+        // 初期値を計算
+        const INITIAL_VALUE = calculateInitialValue();
         currentNumber = INITIAL_VALUE;
 
         // 動画設定
@@ -132,21 +127,17 @@
 
         // 経過時間を計算
         let elapsedSeconds = (millis() - startTime) / 1000;
-        
-        // 55秒ごとに増加（55秒経過時点のみで数字を更新）
-        let completedIncrements = floor(elapsedSeconds / INCREASE_DURATION);
+        let cyclePosition = elapsedSeconds % TOTAL_CYCLE;
+
+        // 55秒経過したサイクル数をカウント（55秒後に一発で増加）
+        let completedIncrements = floor(elapsedSeconds / TOTAL_CYCLE);
+
+        if (cyclePosition >= INCREASE_DURATION) {
+            completedIncrements += 1;
+        }
 
         // 初期値から始めて、サイクルごとに増加
-        let newNumber = calculateInitialValue() + (completedIncrements * INCREMENT_PER_CYCLE);
-        
-        // 数字が変わった瞬間を検出してグリッチ効果を開始
-        if (prevNumber !== null && newNumber !== prevNumber) {
-            isGlitching = true;
-            glitchStartTime = millis();
-        }
-        
-        currentNumber = newNumber;
-        prevNumber = newNumber;
+        currentNumber = calculateInitialValue() + (completedIncrements * INCREMENT_PER_CYCLE);
 
         // 動画の現在位置を取得
         let videoTime = video.elt.currentTime;
@@ -167,34 +158,7 @@
             strokeWeight(3);
         }
 
-        // グリッチ効果の実装
-        if (isGlitching && millis() - glitchStartTime < GLITCH_DURATION) {
-            let glitchProgress = (millis() - glitchStartTime) / GLITCH_DURATION;
-            let glitchIntensity = (1 - glitchProgress) * 0.8; // グリッチの強さ
-            
-            // 複数のグリッチレイヤーを描画
-            for (let i = 0; i < 5; i++) {
-                // ランダムなオフセット
-                let offsetX = random(-20, 20) * glitchIntensity;
-                let offsetY = random(-15, 15) * glitchIntensity;
-                let alpha = random(30, 150) * glitchIntensity;
-                
-                push();
-                translate(offsetX, offsetY);
-                fill(255, 255, 255, 0);
-                stroke(255, random(0, 255), random(0, 255), alpha);
-                strokeWeight(random(1.5, 3.5));
-                text(currentNumber.toString(), width / 2, height / 2);
-                pop();
-            }
-        } else {
-            // グリッチ効果が終了したら、フラグをリセット
-            isGlitching = false;
-        }
-        
-        // 通常の数字を描画
         text(currentNumber.toString(), width / 2, height / 2);
-        
         pop();
     }
     
