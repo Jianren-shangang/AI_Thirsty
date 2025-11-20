@@ -27,6 +27,7 @@
     let video;
     let startTime;
     let currentNumber;
+    let INITIAL_VALUE; // 初期値を一度だけ計算して保持
     let prevNumber = null;
     let glitchStartTime = 0;
     let isGlitching = false;
@@ -74,8 +75,8 @@
     function setup() {
         createCanvas(windowWidth, windowHeight);
         
-        // 初期値を計算
-        const INITIAL_VALUE = calculateInitialValue();
+        // 初期値を一度だけ計算して固定
+        INITIAL_VALUE = calculateInitialValue();
         currentNumber = INITIAL_VALUE;
 
         // 動画設定
@@ -131,14 +132,9 @@
 
         // 経過時間を計算
         let elapsedSeconds = (millis() - startTime) / 1000;
-        let cyclePosition = elapsedSeconds % TOTAL_CYCLE;
-
-        // 55秒経過したサイクル数をカウント（55秒後に一発で増加）
-        let completedIncrements = floor(elapsedSeconds / TOTAL_CYCLE);
-
-        if (cyclePosition >= INCREASE_DURATION) {
-            completedIncrements += 1;
-        }
+        
+        // 55秒ごとに増加（55秒経過時点のみで数字を更新）
+        let completedIncrements = floor(elapsedSeconds / INCREASE_DURATION);
 
         // 初期値から始めて、サイクルごとに増加
         let newNumber = calculateInitialValue() + (completedIncrements * INCREMENT_PER_CYCLE);
